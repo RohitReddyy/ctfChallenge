@@ -14,6 +14,12 @@ const corsOptions = {
 // Enable CORS
 app.use(cors(corsOptions));
 
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.sendStatus(204);  // No content for OPTIONS preflight
+});
 
 const fileSystem = {
   '/home': ['user'],
