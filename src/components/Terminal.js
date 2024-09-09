@@ -14,7 +14,7 @@ const Terminal = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:5000/execute', {
+      const response = await fetch('https://ctf-challenge-git-master-mdrohitreddy-gmailcoms-projects.vercel.app/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
