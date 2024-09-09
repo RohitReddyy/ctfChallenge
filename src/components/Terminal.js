@@ -7,8 +7,6 @@ import { faFile, faFileAlt, faFolder } from '@fortawesome/free-solid-svg-icons';
 const Terminal = () => {
   const [output, setOutput] = useState('');
   const [input, setInput] = useState('');
-  const [currentPath, setCurrentPath] = useState('/home'); // State for current path
-  const [showPath, setShowPath] = useState(false); // State to track if pwd command is run
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,15 +26,6 @@ const Terminal = () => {
 
       const data = await response.json();
       setOutput(data.output);
-
-      if (input.trim() === 'pwd') {
-        setCurrentPath(data.currentPath);
-        setShowPath(true); // Show path after pwd command
-      } else {
-        setShowPath(false); // Hide path if not 'pwd'
-      }
-
-
     } catch (error) {
       setOutput('Error: Unable to fetch data from server.');
     }
@@ -55,8 +44,8 @@ const Terminal = () => {
             {line}
           </div>
         );
-      } else if (line.includes('home') || line.includes('user') || line.includes('Templates') || line.includes('Desktop') || line.includes('Document') || line.includes('Downloads') || line.includes('Music') || line.includes('Pictures') || line.includes('Videos')) {
-        return ( 
+      } else if (line.includes('home') || line.includes('user') || line.includes('Templates')) {
+        return (
           <div key={index} style={{ margin: '5px 0' }}>
             <FontAwesomeIcon icon={faFolder} style={{ marginRight: '8px' }} />
             {line}
@@ -65,6 +54,7 @@ const Terminal = () => {
       } else {
         return (
           <div key={index} style={{ margin: '5px 0' }}>
+            <FontAwesomeIcon icon={faFile} style={{ marginRight: '8px' }} />
             {line}
           </div>
         );
@@ -92,11 +82,6 @@ const Terminal = () => {
       }}>
         {renderOutput()}
       </div>
-      {showPath && ( // Only show the current path if 'pwd' command was used
-        <div style={{ margin: '10px 0', fontWeight: 'bold', color: '#fff' }}>
-          {currentPath}
-        </div>
-      )}
       <form onSubmit={handleSubmit} style={{ display: 'flex' }}>
         <input
           type="text"
