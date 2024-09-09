@@ -8,18 +8,11 @@ const port = process.env.PORT || 5500;
 app.use(express.json());
 
 
-const corsOptions = {
-  origin: '*'
-};
-// Enable CORS
-app.use(cors(corsOptions));
-
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.sendStatus(204);  // No content for OPTIONS preflight
-});
+app.use(cors({
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Allow these headers
+}));
 
 const fileSystem = {
   '/home': ['user'],
