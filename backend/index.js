@@ -1,34 +1,34 @@
-// server/server.js
-
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
 const app = express();
 const port = process.env.PORT || 5500;
 
 app.use(express.json());
 
-
 app.use(cors({
-  origin: '*', // Allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these methods
-  allowedHeaders: ['Content-Type', 'Authorization'] // Allow these headers
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.options('*', cors());
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}));
 
 const fileSystem = {
   '/home': ['user'],
   '/home/user': ['Desktop', 'Document', 'Downloads', 'Music', 'Pictures', 'Templates', 'Videos'],
   '/home/user/Templates': ['iAm_the_@.txt'],
-  '/home/user/Desktop': [
-    'youthinkitsaflag.txt'
-  ],
+  '/home/user/Desktop': ['youthinkitsaflag.txt'],
   '/home/user/Document': [ '🤔yes_this_isflag.txt' ],
   '/home/user/Downloads': [ '👀see_you_are_here.txt' ],
   '/home/user/Music': [ '🎶iknow_you_will_openme.txt' ],
   '/home/user/Pictures': [ '🔍youfoundme.txt' ],
   '/home/user/Videos': [ '😂haha_i_am_not_who_iam.txt' ],
-
 };
 
 const flags = {
@@ -41,50 +41,42 @@ const flags = {
   '/home/user/Videos/haha_i_am_not_who_iam.txt': 'haha you missed me 😂',
 };
 
-let currentPath = '/home';
+// Middleware to initialize user session path
+app.use((req, res, next) => {
+  if (!req.session.currentPath) {
+    req.session.currentPath = '/home';
+  }
+  next();
+});
 
 app.post('/execute', (req, res) => {
   const { command } = req.body;
   const [cmd, ...args] = command.split(' ');
 
-  console.log(`Received command: ${command}`);
-  console.log(`Current path: ${currentPath}`);
+  const currentPath = req.session.currentPath;
 
   switch (cmd) {
     case 'ls':
-      // List contents of the current path
       const contents = fileSystem[currentPath] || [];
       res.json({ output: contents.join('\n'), currentPath });
       break;
     case 'cd':
-        const newPath = args[0]; // Get the new path from the command arguments
-      
-        console.log(`Current path before change: ${currentPath}`);
-        console.log(`Trying to change to directory: ${newPath}`);
-      
-        if (newPath === '..') {
-          // Move up one directory
-          currentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
-          console.log(`Moved up to: ${currentPath}`);
+      const newPath = args[0];
+      if (newPath === '..') {
+        req.session.currentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
+      } else {
+        const newFullPath = `${currentPath}/${newPath}`.replace(/\/+/g, '/');
+        if (fileSystem[newFullPath]) {
+          req.session.currentPath = newFullPath;
         } else {
-          // Construct the new full path
-          const newFullPath = `${currentPath}/${newPath}`.replace(/\/+/g, '/'); // Normalize the path
-      
-          // Check if the new path exists in the fileSystem
-          if (fileSystem[newFullPath]) {
-            currentPath = newFullPath; // Change to the new directory
-            console.log(`Changed directory to: ${currentPath}`);
-          } else {
-            console.log(`Directory not found: ${newFullPath}`);
-            res.json({ output: 'Directory not found.' });
-            return;
-          }
+          res.json({ output: 'Directory not found.' });
+          return;
         }
-      
-        res.json({ output: '',    currentPath }); // Return success response
-        break;
+      }
+      res.json({ output: '', currentPath: req.session.currentPath });
+      break;
     case 'pwd':
-      res.json({ output: currentPath });      
+      res.json({ output: req.session.currentPath });
       break;
     case 'cat':
       const filePath = `${currentPath}/${args[0]}`;
@@ -100,6 +92,11 @@ app.post('/execute', (req, res) => {
       res.json({ output: 'Command not found.' });
       break;
   }
+});
+
+app.post('/reset', (req, res) => {
+  req.session.currentPath = '/home';
+  res.json({ message: 'Path reset to /home', currentPath: req.session.currentPath });
 });
 
 app.get('/sai', (req, res) => {
