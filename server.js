@@ -94,7 +94,7 @@ app.post('/execute', (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
+app.get('/sai', (req, res) => {
   res.send('Server is running');
 });
 
