@@ -3,6 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5500;
 
+// Middleware
 app.use(express.json());
 app.use(cors({
   origin: '*',
@@ -11,6 +12,9 @@ app.use(cors({
 }));
 
 app.options('*', cors());
+
+// In-memory storage for user paths
+const userPaths = {};
 
 const fileSystem = {
   '/home': ['user'],
@@ -34,48 +38,52 @@ const flags = {
   '/home/user/Videos/haha_i_am_not_who_iam.txt': 'haha you missed me 😂',
 };
 
-// Store the current path for each user
-const userPaths = {};
-
+// Command handler
 app.post('/execute', (req, res) => {
-  const { command, reset } = req.body; // Include reset in the request body
+  const { command, reset } = req.body;
   const [cmd, ...args] = command.split(' ');
+
+  // Get user's IP
+  const userIp = req.ip;
 
   // Initialize or reset the current path if reset flag is set
   if (reset) {
-    userPaths[req.ip] = '/home'; // Use req.ip to store per user
+    userPaths[userIp] = '/home';
   }
 
-  let currentPath = userPaths[req.ip] || '/home'; // Default to '/home' if not set
+  // Retrieve the current path for the user
+  let currentPath = userPaths[userIp] || '/home';
 
   console.log(`Received command: ${command}`);
-  console.log(`Current path: ${currentPath}`);
+  console.log(`Current path before command: ${currentPath}`);
 
   switch (cmd) {
     case 'ls':
       const contents = fileSystem[currentPath] || [];
+      console.log(`Directory contents: ${contents.join('\n')}`);
       res.json({ output: contents.join('\n'), currentPath });
       break;
     case 'cd':
       const newPath = args[0];
-
       console.log(`Trying to change to directory: ${newPath}`);
 
       if (newPath === '..') {
+        // Move up one directory level
         currentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
-        console.log(`Moved up to: ${currentPath}`);
       } else {
+        // Move to the specified directory
         const newFullPath = `${currentPath}/${newPath}`.replace(/\/+/g, '/');
         if (fileSystem[newFullPath]) {
           currentPath = newFullPath;
-          console.log(`Changed directory to: ${currentPath}`);
         } else {
           console.log(`Directory not found: ${newFullPath}`);
           res.json({ output: 'Directory not found.' });
           return;
         }
       }
-      userPaths[req.ip] = currentPath; // Update the path for the user
+      // Update the path for the user
+      userPaths[userIp] = currentPath;
+      console.log(`Changed directory to: ${currentPath}`);
       res.json({ output: '', currentPath });
       break;
     case 'pwd':
@@ -95,6 +103,9 @@ app.post('/execute', (req, res) => {
       res.json({ output: 'Command not found.' });
       break;
   }
+
+  // Debugging: Output the current path after processing the command
+  console.log(`Current path after command: ${userPaths[userIp] || '/home'}`);
 });
 
 app.get('/sai', (req, res) => {
