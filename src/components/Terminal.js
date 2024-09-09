@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faFileAlt, faFolder } from '@fortawesome/free-solid-svg-icons';
+import axios from 'axios';
 
 const Terminal = () => {
   const [output, setOutput] = useState('');
@@ -12,26 +13,22 @@ const Terminal = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('https://ctf-challenge-git-master-mdrohitreddy-gmailcoms-projects.vercel.app/execute', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ command: input }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok.');
+        const response = await axios.post('https://ctf-challenge-git-master-mdrohitreddy-gmailcoms-projects.vercel.app/execute', {
+          command: input
+        //   https://ctf-challenge-git-master-mdrohitreddy-gmailcoms-projects.vercel.app/execute
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+  
+        setOutput(response.data.output);
+      } catch (error) {
+        setOutput('Error: Unable to fetch data from server.');
       }
-
-      const data = await response.json();
-      setOutput(data.output);
-    } catch (error) {
-      setOutput('Error: Unable to fetch data from server.');
-    }
-
-    setInput('');
-  };
+  
+      setInput('');
+    };
 
   const renderOutput = () => {
     const lines = output.split('\n');
