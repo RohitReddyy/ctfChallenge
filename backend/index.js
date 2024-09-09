@@ -5,12 +5,19 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5500;
 
-app.use(cors());
 app.use(express.json());
 
 
-app.options('*', cors()); 
+app.use(cors({
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow specific methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow specific headers
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
 
+// Handle preflight requests (OPTIONS)
+app.options('*', cors());
 const fileSystem = {
   '/home': ['user'],
   '/home/user': ['Desktop', 'Document', 'Downloads', 'Music', 'Pictures', 'Templates', 'Videos'],
