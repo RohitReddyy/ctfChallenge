@@ -15,7 +15,7 @@ const Terminal = () => {
 
     try {
       // Set reset to true on the first load
-      const response = await axios.post('https://ctf-challenge-backend.vercel.app/execute', {
+      const response = await axios.post('https://ctf-challenge-iota.vercel.app/execute', {
         command: input,
         reset: isFirstLoad, // Include the reset flag
       }, {
