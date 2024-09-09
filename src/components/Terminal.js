@@ -13,7 +13,7 @@ const Terminal = () => {
     e.preventDefault();
 
     try {
-        const response = await axios.post('http://localhost:5500/execute', {
+        const response = await axios.post('https://ctf-challenge-backend.vercel.app/execute', {
           command: input
         //   https://ctf-challenge-git-master-mdrohitreddy-gmailcoms-projects.vercel.app/execute
         }, {
