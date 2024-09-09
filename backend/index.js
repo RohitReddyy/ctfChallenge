@@ -1,34 +1,27 @@
 const express = require('express');
 const cors = require('cors');
-const session = require('express-session');
 const app = express();
 const port = process.env.PORT || 5500;
 
 app.use(express.json());
-
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(session({
-  secret: 'your-secret-key',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false }
-}));
+app.options('*', cors());
 
 const fileSystem = {
   '/home': ['user'],
   '/home/user': ['Desktop', 'Document', 'Downloads', 'Music', 'Pictures', 'Templates', 'Videos'],
   '/home/user/Templates': ['iAm_the_@.txt'],
   '/home/user/Desktop': ['youthinkitsaflag.txt'],
-  '/home/user/Document': [ '🤔yes_this_isflag.txt' ],
-  '/home/user/Downloads': [ '👀see_you_are_here.txt' ],
-  '/home/user/Music': [ '🎶iknow_you_will_openme.txt' ],
-  '/home/user/Pictures': [ '🔍youfoundme.txt' ],
-  '/home/user/Videos': [ '😂haha_i_am_not_who_iam.txt' ],
+  '/home/user/Document': ['🤔yes_this_isflag.txt'],
+  '/home/user/Downloads': ['👀see_you_are_here.txt'],
+  '/home/user/Music': ['🎶iknow_you_will_openme.txt'],
+  '/home/user/Pictures': ['🔍youfoundme.txt'],
+  '/home/user/Videos': ['😂haha_i_am_not_who_iam.txt'],
 };
 
 const flags = {
@@ -41,19 +34,22 @@ const flags = {
   '/home/user/Videos/haha_i_am_not_who_iam.txt': 'haha you missed me 😂',
 };
 
-// Middleware to initialize user session path
-app.use((req, res, next) => {
-  if (!req.session.currentPath) {
-    req.session.currentPath = '/home';
-  }
-  next();
-});
+// Store the current path for each user
+const userPaths = {};
 
 app.post('/execute', (req, res) => {
-  const { command } = req.body;
+  const { command, reset } = req.body; // Include reset in the request body
   const [cmd, ...args] = command.split(' ');
 
-  const currentPath = req.session.currentPath;
+  // Initialize or reset the current path if reset flag is set
+  if (reset) {
+    userPaths[req.ip] = '/home'; // Use req.ip to store per user
+  }
+
+  let currentPath = userPaths[req.ip] || '/home'; // Default to '/home' if not set
+
+  console.log(`Received command: ${command}`);
+  console.log(`Current path: ${currentPath}`);
 
   switch (cmd) {
     case 'ls':
@@ -62,21 +58,28 @@ app.post('/execute', (req, res) => {
       break;
     case 'cd':
       const newPath = args[0];
+
+      console.log(`Trying to change to directory: ${newPath}`);
+
       if (newPath === '..') {
-        req.session.currentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
+        currentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
+        console.log(`Moved up to: ${currentPath}`);
       } else {
         const newFullPath = `${currentPath}/${newPath}`.replace(/\/+/g, '/');
         if (fileSystem[newFullPath]) {
-          req.session.currentPath = newFullPath;
+          currentPath = newFullPath;
+          console.log(`Changed directory to: ${currentPath}`);
         } else {
+          console.log(`Directory not found: ${newFullPath}`);
           res.json({ output: 'Directory not found.' });
           return;
         }
       }
-      res.json({ output: '', currentPath: req.session.currentPath });
+      userPaths[req.ip] = currentPath; // Update the path for the user
+      res.json({ output: '', currentPath });
       break;
     case 'pwd':
-      res.json({ output: req.session.currentPath });
+      res.json({ output: currentPath });
       break;
     case 'cat':
       const filePath = `${currentPath}/${args[0]}`;
@@ -92,11 +95,6 @@ app.post('/execute', (req, res) => {
       res.json({ output: 'Command not found.' });
       break;
   }
-});
-
-app.post('/reset', (req, res) => {
-  req.session.currentPath = '/home';
-  res.json({ message: 'Path reset to /home', currentPath: req.session.currentPath });
 });
 
 app.get('/sai', (req, res) => {

@@ -1,6 +1,6 @@
 // src/components/Terminal.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faFileAlt, faFolder } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
@@ -8,27 +8,30 @@ import axios from 'axios';
 const Terminal = () => {
   const [output, setOutput] = useState('');
   const [input, setInput] = useState('');
+  const [isFirstLoad, setIsFirstLoad] = useState(true); // Track if it's the first load
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-        const response = await axios.post('https://ctf-challenge-backend.vercel.app/execute', {
-          command: input
-        //   https://ctf-challenge-git-master-mdrohitreddy-gmailcoms-projects.vercel.app/execute
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
+      // Set reset to true on the first load
+      const response = await axios.post('https://ctf-challenge-backend.vercel.app/execute', {
+        command: input,
+        reset: isFirstLoad, // Include the reset flag
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
   
-        setOutput(response.data.output);
-      } catch (error) {
-        setOutput('Error: Unable to fetch data from server.');
-      }
+      setOutput(response.data.output);
+    } catch (error) {
+      setOutput('Error: Unable to fetch data from server.');
+    }
   
-      setInput('');
-    };
+    setInput('');
+    setIsFirstLoad(false); // After the first command, set it to false
+  };
 
   const renderOutput = () => {
     const lines = output.split('\n');
