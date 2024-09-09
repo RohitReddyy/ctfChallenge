@@ -14,6 +14,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'] // Allow these headers
 }));
 
+app.options('*', cors());
+
 const fileSystem = {
   '/home': ['user'],
   '/home/user': ['Desktop', 'Document', 'Downloads', 'Music', 'Pictures', 'Templates', 'Videos'],
